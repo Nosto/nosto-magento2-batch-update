@@ -149,19 +149,19 @@ class NostoMassUpdaterCommand extends Command
     {
         $this->io = new SymfonyStyle($input, $output);
         try {
+            $storeCode = $this->io->choice(
+                'Select store code: ',
+                $this->getStoreCodes()
+            );
+            $storeId = $this->resolveStoreId($storeCode);
             $productsAmount = $input->getOption(self::PRODUCTS_AMOUNT) ?:
-                $this->io->ask(sprintf('Enter amount of products: [Max: %d]', $this->getTotalCountProducts()));
+                $this->io->ask(sprintf('Enter amount of products: [Max: %d]', $this->getTotalCountProducts($storeId)));
             $appendText = $input->getOption(self::APPEND_TXT) ?:
                 $this->io->ask('Enter text to be amended:');
             $attributeChosen = strtolower($this->io->choice(
                 'Select attribute to amend',
                 self::PRODUCT_ATTRIBUTES
             ));
-            $storeCode = $this->io->choice(
-                'Select store code: ',
-                $this->getStoreCodes()
-            );
-            $storeId = $this->resolveStoreId($storeCode);
             $this->updateProducts($storeId, $productsAmount, $attributeChosen, $appendText);
             $this->io->success('Operation completed');
         } catch (\Exception $e) {
@@ -180,7 +180,7 @@ class NostoMassUpdaterCommand extends Command
      */
     private function updateProducts($storeId, $amount, $attribute, $appendTxt)
     {
-        $totalProducts = $this->getTotalCountProducts();
+        $totalProducts = $this->getTotalCountProducts($storeId);
         if ($totalProducts <= 0) {
             throw new \Exception('No products in the Database');
         }
@@ -234,11 +234,12 @@ class NostoMassUpdaterCommand extends Command
      *
      * @return int
      */
-    private function getTotalCountProducts()
+    private function getTotalCountProducts($storeId)
     {
         $collection = $this->productCollectionFactory->create();
-        $collection->addAttributeToSelect('*');
-        return $collection->count();
+        $collection->addAttributeToSelect('id');
+        $collection->addStoreFilter($storeId);
+        return $collection->getSize();
     }
 
     /**
