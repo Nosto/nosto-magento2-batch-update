@@ -59,7 +59,7 @@ class NostoMassUpdaterCommand extends Command
     public const APPEND_TXT = 'append-text';
     public const PRODUCT_ATTRIBUTE = 'product-attribute';
     public const STORE_CODE = 'store-code';
-    public const BATCH_SIZE = 500;
+    public const BATCH_SIZE = 50;
     public const PRODUCT_ATTRIBUTES = [
         1 => 'Name',
         2 => 'Description'
