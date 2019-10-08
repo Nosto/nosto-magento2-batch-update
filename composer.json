@@ -2,7 +2,7 @@
   "name": "nosto/module-massupdater",
   "description": "Mass update product properties",
   "type": "magento2-module",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "require-dev": {
     "php": ">=5.5.0"
   },
@@ -12,7 +12,7 @@
   "license": [
     "OSL-3.0"
   ],
-  "minimum-stability": "dev",
+  "minimum-stability": "stable",
   "autoload": {
     "psr-4": {
       "Nosto\\MassUpdater\\": ""
