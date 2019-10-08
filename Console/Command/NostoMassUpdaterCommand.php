@@ -36,23 +36,23 @@
 
 namespace Nosto\MassUpdater\Console\Command;
 
+use Exception;
+use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Magento\Catalog\Model\Product\Attribute\Source\Status;
-use Magento\Framework\Api\SearchCriteriaBuilder;
-use Magento\Catalog\Model\ProductRepository;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
-use Magento\Catalog\Model\Product\Visibility;
-use Magento\Framework\App\State;
-use Magento\Framework\App\Area;
 use Magento\Catalog\Model\ResourceModel\Product\Collection as ProductCollection;
 use Magento\Catalog\Model\ResourceModel\Product\Action;
 use Magento\Store\Model\StoreManager;
 use Magento\Store\Model\Store;
 
+/**
+ * Class NostoMassUpdaterCommand
+ * @package Nosto\MassUpdater\Console\Command
+ */
 class NostoMassUpdaterCommand extends Command
 {
     public const PRODUCTS_AMOUNT = 'products-amount';
@@ -65,45 +65,23 @@ class NostoMassUpdaterCommand extends Command
         2 => 'Description'
     ];
 
-    private $searchCriteriaBuilder;
-    private $productRepository;
     private $productCollectionFactory;
-    private $productStatus;
-    private $productVisibility;
-    private $state;
     private $storeManager;
-    /** @var SymfonyStyle */
     private $io;
-    /** @var Action */
     private $action;
 
     /**
      * NostoMassUpdaterCommand constructor.
-     * @param SearchCriteriaBuilder $searchCriteriaBuilder
-     * @param ProductRepository $productRepository
      * @param CollectionFactory $productCollectionFactory
-     * @param Status $productStatus
-     * @param Visibility $productVisibility
-     * @param State $state
      * @param Action $action
      * @param StoreManager $storeManager
      */
     public function __construct(
-        SearchCriteriaBuilder $searchCriteriaBuilder,
-        ProductRepository $productRepository,
         CollectionFactory $productCollectionFactory,
-        Status $productStatus,
-        Visibility $productVisibility,
-        State $state,
         Action $action,
         StoreManager $storeManager
     ) {
-        $this->searchCriteriaBuilder = $searchCriteriaBuilder;
-        $this->productRepository = $productRepository;
         $this->productCollectionFactory = $productCollectionFactory;
-        $this->productStatus = $productStatus;
-        $this->productVisibility = $productVisibility;
-        $this->state = $state;
         $this->action = $action;
         $this->storeManager = $storeManager;
         parent::__construct();
@@ -138,7 +116,6 @@ class NostoMassUpdaterCommand extends Command
                 InputOption::VALUE_REQUIRED,
                 'Store to update the catalog'
             );
-        $this->state->setAreaCode(Area::AREA_ADMINHTML); // Needed for context
         parent::configure();
     }
 
@@ -164,7 +141,7 @@ class NostoMassUpdaterCommand extends Command
             ));
             $this->updateProducts($storeId, $productsAmount, $attributeChosen, $appendText);
             $this->io->success('Operation completed');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->io->error($e->getMessage());
         }
     }
@@ -176,13 +153,13 @@ class NostoMassUpdaterCommand extends Command
      * @param $amount
      * @param $attribute
      * @return bool |null
-     * @throws \Exception
+     * @throws Exception
      */
     private function updateProducts($storeId, $amount, $attribute, $appendTxt)
     {
         $totalProducts = $this->getTotalCountProducts($storeId);
         if ($totalProducts <= 0) {
-            throw new \Exception('No products in the Database');
+            throw new RuntimeException('No products in the Database');
         }
         if ($amount > $totalProducts) {
             $this->io->note(
@@ -202,7 +179,7 @@ class NostoMassUpdaterCommand extends Command
                 $collection->setPageSize($batchSize);
                 $collection->setCurPage($pageNumber);
                 $this->updateProductsBatch($collection, $storeId, $attribute, $batchSize, $appendTxt);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->io->error($e->getMessage());
                 return false;
             }
@@ -217,13 +194,12 @@ class NostoMassUpdaterCommand extends Command
      * @param $attribute
      * @param $batchSize
      * @param $appendTxt
-     * @throws \Exception
+     * @throws Exception
      */
     private function updateProductsBatch(ProductCollection $products, $storeId, $attribute, $batchSize, $appendTxt)
     {
-        /** @var \Magento\Catalog\Model\ResourceModel\Product\Collection $products */
+        /** @var ProductCollection $products */
         foreach ($products as $product) {
-//            $this->action->updateAttributes([$product->getId()], [$attribute => str_replace($appendTxt, '', $product->getName())], 1);
             $this->action->updateAttributes([$product->getId()], [$attribute => $product->getName() . $appendTxt], $storeId);
             $this->io->progressAdvance();
         }
@@ -232,6 +208,7 @@ class NostoMassUpdaterCommand extends Command
     /**
      * Returns the total count of products in the database
      *
+     * @param $storeId
      * @return int
      */
     private function getTotalCountProducts($storeId)
@@ -247,7 +224,7 @@ class NostoMassUpdaterCommand extends Command
      *
      * @param $storeCode
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
     private function resolveStoreId($storeCode)
     {
@@ -258,7 +235,7 @@ class NostoMassUpdaterCommand extends Command
                 return $store->getId();
             }
         }
-        throw new \RuntimeException('Could not find Store');
+        throw new RuntimeException('Could not find Store');
     }
 
     /**
