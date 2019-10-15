@@ -12,7 +12,7 @@
   "license": [
     "OSL-3.0"
   ],
-  "minimum-stability": "stable",
+  "minimum-stability": "dev",
   "autoload": {
     "psr-4": {
       "Nosto\\MassUpdater\\": ""
