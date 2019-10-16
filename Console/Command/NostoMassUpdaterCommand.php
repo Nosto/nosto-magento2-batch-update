@@ -37,7 +37,10 @@
 namespace Nosto\MassUpdater\Console\Command;
 
 use Exception;
-use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\CouldNotSaveException;
+use Magento\Framework\Exception\InputException;
+use Magento\Framework\Exception\StateException;
+use Magento\Framework\App\State;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -49,8 +52,6 @@ use Magento\Catalog\Model\ResourceModel\Product\Collection as ProductCollection;
 use Magento\Store\Model\StoreManager;
 use Magento\Store\Model\Store;
 use Magento\Catalog\Model\ProductRepository;
-use Magento\Framework\App\State;
-use Magento\Framework\App\Area;
 
 /**
  * Class NostoMassUpdaterCommand
@@ -96,7 +97,6 @@ class NostoMassUpdaterCommand extends Command
 
     /**
      * {@inheritdoc}
-     * @throws LocalizedException
      */
     protected function configure()
     {
@@ -123,7 +123,6 @@ class NostoMassUpdaterCommand extends Command
                 InputOption::VALUE_REQUIRED,
                 'Store to update the catalog'
             );
-        $this->state->setAreaCode(Area::AREA_ADMINHTML);
         parent::configure();
     }
 
@@ -214,8 +213,9 @@ class NostoMassUpdaterCommand extends Command
             } else { // If Description was selected
                 $product->setDescription($product->getDescription() . $appendTxt);
             }
-
-            $this->productRepository->save($product);
+            $this->state->emulateAreaCode('adminhtml', function() use ($product){
+                $this->productRepository->save($product);
+            });
             $this->io->progressAdvance();
         }
     }
