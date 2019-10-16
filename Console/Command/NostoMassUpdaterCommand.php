@@ -138,6 +138,9 @@ class NostoMassUpdaterCommand extends Command
                 'Select store code: ',
                 $this->getStoreCodes()
             );
+            if (!$storeCode) { // In case is non-interactive
+                $storeCode = $input->getOption(self::STORE_CODE);
+            }
             $storeId = $this->resolveStoreId($storeCode);
             $productsAmount = $input->getOption(self::PRODUCTS_AMOUNT) ?:
                 $this->io->ask(sprintf('Enter amount of products: [Max: %d]', $this->getTotalCountProducts($storeId)));
